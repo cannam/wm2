@@ -2,7 +2,7 @@
 LIBS	=  -L/usr/X11/lib -lXext -lX11 -lXmu -lm
 
 CC	= gcc
-CCC	= gcc
+CCC	= g++
 CFLAGS	= -O2
 OBJECTS	= Border.o Buttons.o Client.o Events.o Main.o Manager.o Rotated.o
 

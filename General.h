@@ -32,7 +32,8 @@ typedef char Boolean;
 #define NewString(x) (strcpy((char *)malloc(strlen(x)+1),(x)))
 
 #ifndef SIGNAL_CALLBACK_TYPE
-#define SIGNAL_CALLBACK_TYPE (void (*)(...))
+//#define SIGNAL_CALLBACK_TYPE (void (*)(...))
+#define SIGNAL_CALLBACK_TYPE (void (*)(int))
 #endif
 
 #define signal(x,y)     \
