@@ -24,8 +24,8 @@ wm2 provides:
 This release
 ============
 
-This is the third release of wm2, made in January 1997.  It differs in
-some ways from the first and second releases.
+This is the fourth release of wm2, made in March 1997.  It differs in
+some ways from the first, second and third releases.
 
 
 Building wm2
@@ -34,10 +34,8 @@ Building wm2
 You will need a Unix machine, X libraries and a C++ compiler such as
 gcc.  You will also need a mouse, with at least one button.  Your X
 server and libraries must be R4 or newer and must support the Shape
-extension.  If you want to use frame background-pixmaps (see "Pixmaps"
-below), you will need the Xpm header and library.  wm2 does NOT
-support multi-screen displays, because I don't have anything to test
-multi-screen code on.
+extension.  wm2 does NOT support multi-screen displays, because I
+don't have anything to test multi-screen code on.
 
 wm2 makes relatively heavy demands on the performance of your X
 server, because of the use of shaped windows, but it shouldn't place
@@ -90,22 +88,22 @@ Available window manipulations are:
     second and a half until the cursor changes to a cross, then
     release.  (I know, it's not very easy.  On the other hand,
     things like Windows-95 tend to obscure the fact that most
-    windows already have a perfectly good Close option.)
+    windows already have a perfectly good Close option.  If the
+    default delay doesn't suit you, change it in Config.h and
+    recompile.)
 
  -- To resize a window: make sure it's in focus, then click and
     drag on its bottom-right corner.  For a constrained resize,
     click and drag on the bottom-left or top-right corner of
     the enclosing window frame.
 
- -- To lower a window: click with the right mouse button on its
-    tab or frame.  (This was the only new feature in the second
-    release.)
+ -- To flip around amongst the windows on-screen: click with the right
+    mouse button on the root window or on any window's frame or tab.
 
  -- To exit from wm2: move the mouse pointer to the very edge of the
     screen at the extreme lower-right corner, and click left button on
     the root window for the root menu.  The menu should have an extra
-    option labelled "Exit wm2"; select this.  (This is a new feature
-    in the third release.)
+    option labelled "Exit wm2"; select this.
 
 All move and resize operations are opaque.
 
@@ -127,21 +125,20 @@ definable in Config.h.
 Pixmaps
 =======
 
-This third release of wm2 will allow you to specify a background
-pixmap for the window frames.  If you set CONFIG_USE_PIXMAPS to True
-in Config.h and supply a file ./background.xpm which contains an Xpm
-pixmap called "background", wm2 will use this to colour in the frames.
-An especially unpleasant example file, cribbed and modified from
-http://home.netscape.com/assist/net_sites/bg/marble/greenred_marble.gif,
-is included, although you're advised to find your own.
+This fourth release of wm2 no longer supports frame background
+pixmaps.  If you want them, consider using wmx (available from the
+same place as wm2) instead.
 
 
 xterm
 =====
 
-Some versions of xterm run badly under wm2.  If you use xterm and find
-that it refreshes the window excessively slowly, you might like to try
-using xvt or rxvt instead.
+Some versions of xterm and rxvt run badly with wm2.  If you use xterm
+and find that it refreshes the window excessively slowly, you might
+like to try experimenting with a different terminal emulation program.
+I think it might help to ensure that the scrollbar is on the
+right-hand side of the rxvt window and is thick enough that wmx's
+resize handle doesn't obscure any of the text area.
 
 
 Credits

@@ -617,7 +617,16 @@ void Client::getTransient()
     Window t = None;
 
     if (XGetTransientForHint(display(), m_window, &t) != 0) {
-	m_transient = t;
+
+	if (windowManager()->windowToClient(t) == this) {
+	    fprintf(stderr,
+		    "wm2: warning: client \"%s\" thinks it's a transient "
+		    "for\nitself -- ignoring WM_TRANSIENT_FOR property...\n",
+		    m_label ? m_label : "(no name)");
+	    m_transient = None;
+	} else {		
+	    m_transient = t;
+	}
     } else {
 	m_transient = None;
     }
@@ -682,8 +691,10 @@ void Client::sendConfigureNotify()
 }
 
 
-void Client::withdraw()
+void Client::withdraw(Boolean changeState)
 {
+//    fprintf(stderr,"withdrawing\n");
+
     m_border->unmap();
 
     gravitate(True);
@@ -691,8 +702,10 @@ void Client::withdraw()
 
     gravitate(False);
 
-    XRemoveFromSaveSet(display(), m_window);
-    setState(WithdrawnState);
+    if (changeState) {
+	XRemoveFromSaveSet(display(), m_window);
+	setState(WithdrawnState);
+    }
 
     ignoreBadWindowErrors = True;
     XSync(display(), False);
@@ -743,4 +756,5 @@ void Client::lower()
 {
     m_border->lower();
 }
+
 

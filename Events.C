@@ -147,7 +147,8 @@ void WindowManager::nextEvent(XEvent *e)
 	t.tv_sec = 0; t.tv_usec = 20000;
 
 	if ((r = select(fd + 1, &rfds, NULL, NULL,
-			m_focusChanging ? &t : (struct timeval *)NULL)) == 1) {
+			(m_focusChanging) ? &t :
+			(struct timeval *)NULL)) == 1) {
 	    XNextEvent(m_display, e);
 	    return;
 	}

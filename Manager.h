@@ -3,7 +3,7 @@
 #define _MANAGER_H_
 
 #include "General.h"
-#include "listmacro.h"
+#include "listmacro2.h"
 
 class Client;
 declarePList(ClientList, Client);
@@ -40,6 +40,7 @@ public:
     void installCursor(RootCursor);
     void installCursorOnWindow(RootCursor, Window);
     void installColormap(Colormap);
+    unsigned long allocateColour(char *, char *);
 
     void considerFocusChange(Client *, Window, Time timestamp);
     void stopConsideringFocus();

@@ -4,19 +4,6 @@
 #include "Manager.h"
 #include "Rotated.h"
 
-#if CONFIG_USE_PIXMAPS != False
-#include <X11/xpm.h>
-#include "background.xpm"
-#endif
-
-// These distances all exclude the 1-pixel borders.  You could
-// probably change these a certain amount before breaking the shoddy
-// code in the rest of this file.
-
-int Border::m_tabTopHeight = 2;
-int Border::m_frameWidth = CONFIG_FRAME_THICKNESS;
-int Border::m_transientFrameWidth = 4;
-
 // These are degenerate initialisations, don't change them
 int Border::m_tabWidth = -1;
 XRotFontStruct *Border::m_tabFont = 0;
@@ -27,9 +14,28 @@ unsigned long Border::m_backgroundPixel;
 unsigned long Border::m_frameBackgroundPixel;
 unsigned long Border::m_buttonBackgroundPixel;
 unsigned long Border::m_borderPixel;
-Pixmap Border::m_backgroundPixmap = None;
 
 static int borderCounter = 0;
+
+
+declareList(RectangleList, XRectangle);
+implementList(RectangleList, XRectangle);
+
+class BorderRectangleList : public RectangleList
+{
+public:
+    BorderRectangleList() { }
+    ~BorderRectangleList() { }
+
+    void appendRect(int x, int y, int w, int h);
+};
+
+void BorderRectangleList::appendRect(int x, int y, int w, int h)
+{
+    XRectangle r;
+    r.x = x; r.y = y; r.width = w; r.height = h;
+    append(r);
+}
 
 
 Border::Border(Client *const c, Window child) :
@@ -48,37 +54,20 @@ Border::Border(Client *const c, Window child) :
 	}
 
 	m_tabWidth = m_tabFont->height + 4;
-	if (m_tabWidth < m_tabTopHeight * 2 + 8) {
-	    m_tabWidth = m_tabTopHeight * 2 + 8;
+	if (m_tabWidth < TAB_TOP_HEIGHT * 2 + 8) {
+	    m_tabWidth = TAB_TOP_HEIGHT * 2 + 8;
 	}
 
-	int screen = 0;		// !!
-	XColor nearest, ideal;
-
-	if (!XAllocNamedColor(display(), DefaultColormap(display(), screen),
-			      CONFIG_TAB_FOREGROUND, &nearest, &ideal)) {
-	    fatal("couldn't load tab foreground colour");
-	} else m_foregroundPixel = nearest.pixel;
-
-	if (!XAllocNamedColor(display(), DefaultColormap(display(), screen),
-			      CONFIG_TAB_BACKGROUND, &nearest, &ideal)) {
-	    fatal("couldn't load tab background colour");
-	} else m_backgroundPixel = nearest.pixel;
-
-	if (!XAllocNamedColor(display(), DefaultColormap(display(), screen),
-			      CONFIG_FRAME_BACKGROUND, &nearest, &ideal)) {
-	    fatal("couldn't load frame background colour");
-	} else m_frameBackgroundPixel = nearest.pixel;
-
-	if (!XAllocNamedColor(display(), DefaultColormap(display(), screen),
-			      CONFIG_BUTTON_BACKGROUND, &nearest, &ideal)) {
-	    fatal("couldn't load button background colour");
-	} else m_buttonBackgroundPixel = nearest.pixel;
-
-	if (!XAllocNamedColor(display(), DefaultColormap(display(), screen),
-			      CONFIG_BORDERS, &nearest, &ideal)) {
-	    fatal("couldn't load border colour");
-	} else m_borderPixel = nearest.pixel;
+	m_foregroundPixel = windowManager()->allocateColour
+	    (CONFIG_TAB_FOREGROUND, "tab foreground");
+	m_backgroundPixel = windowManager()->allocateColour
+	    (CONFIG_TAB_BACKGROUND, "tab background");
+	m_frameBackgroundPixel = windowManager()->allocateColour
+	    (CONFIG_FRAME_BACKGROUND, "frame background");
+	m_buttonBackgroundPixel = windowManager()->allocateColour
+	    (CONFIG_BUTTON_BACKGROUND, "button background");
+	m_borderPixel = windowManager()->allocateColour
+	    (CONFIG_BORDERS, "border");
 
 	XGCValues values;
 	values.foreground = m_foregroundPixel;
@@ -95,20 +84,6 @@ Border::Border(Client *const c, Window child) :
 	if (!m_drawGC) {
 	    windowManager()->fatal("couldn't allocate border GC");
 	}
-
-#if CONFIG_USE_PIXMAPS != False
-	if (CONFIG_USE_PIXMAPS) {
-	    XpmAttributes attrs;
-	    attrs.valuemask = 0L;
-	    if (XpmCreatePixmapFromData(display(), root(), background,
-					&m_backgroundPixmap, NULL, &attrs)
-		!= XpmSuccess) {
-		fprintf(stderr, "wm2: couldn't create background pixmap\n"); 
-		m_backgroundPixmap = None;
-	    }
-	} else
-#endif
-	    m_backgroundPixmap = None;
     }
 
     ++borderCounter;
@@ -133,9 +108,6 @@ Border::~Border()
 
     if (--borderCounter == 0) {
 	XFreeGC(display(), m_drawGC);
-	if (m_backgroundPixmap != None) {
-	    XFreePixmap(display(), m_backgroundPixmap);
-	}
     }
 }
 
@@ -235,10 +207,6 @@ void Border::fixTabHeight(int maxHeight)
 }
 
 
-declareList(RectangleList, XRectangle);
-implementList(RectangleList, XRectangle);
-
-
 void Border::shapeTransientParent(int w, int h)
 {
     XRectangle r;
@@ -260,27 +228,15 @@ void Border::shapeTransientParent(int w, int h)
 void Border::setTransientFrameVisibility(Boolean visible, int w, int h)
 {
     int i;
-    XRectangle r;
-    RectangleList rl;
+    BorderRectangleList rl;
 
-    r.x = 0; r.y = 0;
-    r.width = w + 1; r.height = yIndent() - 1;
-    rl.append(r);
-
+    rl.appendRect(0, 0, w + 1, yIndent() - 1);
     for (i = 1; i < yIndent(); ++i) {
-	r.x = w + 1; r.y = i - 1;
-	r.width = i + 1; r.height = 1;
-	rl.append(r);
+	rl.appendRect(w + 1, i - 1, i + 1, 1);
     }
-
-    r.x = 0; r.y = yIndent() - 1;
-    r.width = xIndent() - 1; r.height = h - yIndent() + 2;
-    rl.append(r);
-
+    rl.appendRect(0, yIndent() - 1, xIndent() - 1, h - yIndent() + 2);
     for (i = 1; i < yIndent(); ++i) {
-	r.x = i - 1; r.y = h;
-	r.width = 1; r.height = i + 2;
-	rl.append(r);
+	rl.appendRect(i - 1, h, 1, i + 2);
     }
 
     XShapeCombineRectangles
@@ -290,24 +246,13 @@ void Border::setTransientFrameVisibility(Boolean visible, int w, int h)
 
     rl.remove_all();
 
-    r.x = 1; r.y = 1;
-    r.width = w; r.height = yIndent() - 2;
-    rl.append(r);
-
+    rl.appendRect(1, 1, w, yIndent() - 2);
     for (i = 2; i < yIndent(); ++i) {
-	r.x = w + 1; r.y = i - 1;
-	r.width = i; r.height = 1;
-	rl.append(r);
+	rl.appendRect(w + 1, i - 1, i, 1);
     }
-
-    r.x = 1; r.y = yIndent() - 1;
-    r.width = xIndent() - 2; r.height = h - yIndent() + 1;
-    rl.append(r);
-
+    rl.appendRect(1, yIndent() - 1, xIndent() - 2, h - yIndent() + 1);
     for (i = 2; i < yIndent(); ++i) {
-	r.x = i - 1; r.y = h;
-	r.width = 1; r.height = i + 1;
-	rl.append(r);
+	rl.appendRect(i - 1, h, 1, i + 1);
     }
 
     XShapeCombineRectangles
@@ -320,9 +265,8 @@ void Border::setTransientFrameVisibility(Boolean visible, int w, int h)
 void Border::shapeParent(int w, int h)
 {
     int i;
-    XRectangle r;
     int mainRect;
-    RectangleList rl;
+    BorderRectangleList rl;
 
     if (isTransient()) {
 	shapeTransientParent(w, h);
@@ -333,37 +277,26 @@ void Border::shapeParent(int w, int h)
     // child window border
 
     // top of tab
-    r.x = 0; r.y = 0;
-    r.width = w + m_tabWidth + 1; r.height = m_tabTopHeight + 2;
-    rl.append(r);
-    
+    rl.appendRect(0, 0, w + m_tabWidth + 1, TAB_TOP_HEIGHT + 2);
+
     // struts in tab, left...
-    r.x = 0; r.y = m_tabTopHeight + 1;
-    r.width = m_tabTopHeight + 2; r.height = m_tabWidth - m_tabTopHeight*2 - 1;
-    rl.append(r);
+    rl.appendRect(0, TAB_TOP_HEIGHT + 1,
+		  TAB_TOP_HEIGHT + 2, m_tabWidth - TAB_TOP_HEIGHT*2 - 1);
 
     // ...and right
-    r.x = m_tabWidth - m_tabTopHeight; r.y = m_tabTopHeight + 1;
-    r.width = m_tabTopHeight + 2; r.height = m_tabWidth - m_tabTopHeight*2 - 1;
-    rl.append(r);
+    rl.appendRect(m_tabWidth - TAB_TOP_HEIGHT, TAB_TOP_HEIGHT + 1,
+		  TAB_TOP_HEIGHT + 2, m_tabWidth - TAB_TOP_HEIGHT*2 - 1);
 
-    // main window
-    r.x = xIndent() - 1; r.y = yIndent() - 1;
-    r.width = w + 2; r.height = h + 2;
     mainRect = rl.count();
-    rl.append(r);
+    rl.appendRect(xIndent() - 1, yIndent() - 1, w + 2, h + 2);
 
     // main tab
-    r.x = 0; r.y = m_tabWidth - m_tabTopHeight;
-    r.width = m_tabWidth + 2;
-    r.height = m_tabHeight - m_tabWidth + m_tabTopHeight;
-    rl.append(r);
+    rl.appendRect(0, m_tabWidth - TAB_TOP_HEIGHT, m_tabWidth + 2,
+		  m_tabHeight - m_tabWidth + TAB_TOP_HEIGHT);
 
     // diagonal
     for (i = 1; i < m_tabWidth - 1; ++i) {
-	r.x = i; r.y = m_tabHeight + i - 1;
-	r.width = m_tabWidth - i + 2; r.height = 1;
-	rl.append(r);
+	rl.appendRect(i, m_tabHeight + i - 1, m_tabWidth - i + 2, 1);
     }
 
     XShapeCombineRectangles
@@ -384,8 +317,7 @@ void Border::shapeParent(int w, int h)
 void Border::shapeTab(int w, int)
 {
     int i;
-    XRectangle r;
-    RectangleList rl;
+    BorderRectangleList rl;
 
     if (isTransient()) {
 	return;
@@ -393,27 +325,18 @@ void Border::shapeTab(int w, int)
 
     // Bounding rectangles
 
-    r.x = 0; r.y = 0;
-    r.width = w + m_tabWidth + 1; r.height = m_tabTopHeight + 2;
-    rl.append(r);
-    
-    r.x = 0; r.y = m_tabTopHeight + 1;
-    r.width = m_tabTopHeight + 2; r.height = m_tabWidth - m_tabTopHeight*2 - 1;
-    rl.append(r);
+    rl.appendRect(0, 0, w + m_tabWidth + 1, TAB_TOP_HEIGHT + 2);
+    rl.appendRect(0, TAB_TOP_HEIGHT + 1, TAB_TOP_HEIGHT + 2,
+		  m_tabWidth - TAB_TOP_HEIGHT*2 - 1);
 
-    r.x = m_tabWidth - m_tabTopHeight; r.y = m_tabTopHeight + 1;
-    r.width = m_tabTopHeight + 2; r.height = m_tabWidth - m_tabTopHeight*2 - 1;
-    rl.append(r);
+    rl.appendRect(m_tabWidth - TAB_TOP_HEIGHT, TAB_TOP_HEIGHT + 1,
+		  TAB_TOP_HEIGHT + 2, m_tabWidth - TAB_TOP_HEIGHT*2 - 1);
 
-    r.x = 0; r.y = m_tabWidth - m_tabTopHeight;
-    r.width = m_tabWidth + 2;
-    r.height = m_tabHeight - m_tabWidth + m_tabTopHeight;
-    rl.append(r);
+    rl.appendRect(0, m_tabWidth - TAB_TOP_HEIGHT, m_tabWidth + 2,
+		  m_tabHeight - m_tabWidth + TAB_TOP_HEIGHT);
 
     for (i = 1; i < m_tabWidth - 1; ++i) {
-	r.x = i; r.y = m_tabHeight + i - 1;
-	r.width = m_tabWidth - i + 2; r.height = 1;
-	rl.append(r);
+	rl.appendRect(i, m_tabHeight + i - 1, m_tabWidth - i + 2, 1);
     }
 
     XShapeCombineRectangles
@@ -424,34 +347,24 @@ void Border::shapeTab(int w, int)
 
     // Clipping rectangles
 
-    r.x = 1; r.y = 1;
-    r.width = w + m_tabWidth - 1; r.height = m_tabTopHeight;
-    rl.append(r);
+    rl.appendRect(1, 1, w + m_tabWidth - 1, TAB_TOP_HEIGHT);
 
-    r.x = 1; r.y = m_tabTopHeight + 1;
-    r.width = m_tabTopHeight; r.height = m_tabWidth + m_tabTopHeight*2 - 1;
-    rl.append(r);
+    rl.appendRect(1, TAB_TOP_HEIGHT + 1, TAB_TOP_HEIGHT,
+		  m_tabWidth + TAB_TOP_HEIGHT*2 - 1);
 
-    r.x = m_tabWidth - m_tabTopHeight + 1; r.y = m_tabTopHeight + 1;
-    r.width = m_tabTopHeight; r.height = m_tabWidth + m_tabTopHeight*2 - 1;
-    rl.append(r);
+    rl.appendRect(m_tabWidth - TAB_TOP_HEIGHT + 1, TAB_TOP_HEIGHT + 1,
+		  TAB_TOP_HEIGHT, m_tabWidth + TAB_TOP_HEIGHT*2 - 1);
 
-    r.x = 1; r.y = m_tabWidth - m_tabTopHeight + 1;
-    r.width = m_tabWidth;
-    r.height = m_tabHeight - m_tabWidth + m_tabTopHeight - 1;
-    rl.append(r);
+    rl.appendRect(1, m_tabWidth - TAB_TOP_HEIGHT + 1, m_tabWidth,
+		  m_tabHeight - m_tabWidth + TAB_TOP_HEIGHT - 1);
 
     for (i = 1; i < m_tabWidth - 2; ++i) {
-	r.x = i + 1; r.y = m_tabHeight + i - 1;
-	r.width = m_tabWidth - i; r.height = 1;
-	rl.append(r);
+	rl.appendRect(i + 1, m_tabHeight + i - 1, m_tabWidth - i, 1);
     }
 
     XShapeCombineRectangles
 	(display(), m_tab, ShapeClip,
 	 0, 0, rl.array(0, rl.count()), rl.count(), ShapeSet, YXSorted);
-
-//    XSync(display(), False);
 }
 
 
@@ -459,7 +372,7 @@ void Border::resizeTab(int h)
 {
     int i;
     XRectangle r;
-    RectangleList rl;
+    BorderRectangleList rl;
     int shorter, longer, operation;
 
     if (isTransient()) {
@@ -507,15 +420,13 @@ void Border::resizeTab(int h)
     if (m_client->isActive()) {
 	// restore a bit of the frame edge
 	r.x = m_tabWidth + 1; r.y = shorter;
-	r.width = m_frameWidth - 1; r.height = longer - shorter;
+	r.width = FRAME_WIDTH - 1; r.height = longer - shorter;
 	XShapeCombineRectangles(display(), m_parent, ShapeBounding,
 				0, 0, &r, 1, ShapeUnion, YXBanded);
     }
 
     for (i = 1; i < m_tabWidth - 1; ++i) {
-	r.x = i; r.y = m_tabHeight + i - 1/*3*/;
-	r.width = m_tabWidth - i + 2; r.height = 1;
-	rl.append(r);
+	rl.appendRect(i, m_tabHeight + i - 1, m_tabWidth - i + 2, 1);
     }
 	
     XShapeCombineRectangles
@@ -540,20 +451,16 @@ void Border::resizeTab(int h)
 	(display(), m_tab, ShapeClip,
 	 0, 0, rl.array(0, rl.count() - 1), rl.count() - 1,
 	 ShapeUnion, YXBanded);
-
-//    XSync(display(), False);
 }
 
 
 void Border::shapeResize()
 {
     int i;
-    XRectangle r;
-    RectangleList rl;
+    BorderRectangleList rl;
 
-    for (i = 0; i < m_frameWidth*2; ++i) {
-	r.x = m_frameWidth*2 - i - 1; r.y = i; r.width = i + 1; r.height = 1;
-	rl.append(r);
+    for (i = 0; i < FRAME_WIDTH*2; ++i) {
+	rl.appendRect(FRAME_WIDTH*2 - i - 1, i, i + 1, 1);
     }
 
     XShapeCombineRectangles
@@ -562,9 +469,8 @@ void Border::shapeResize()
 
     rl.remove_all();
 
-    for (i = 1; i < m_frameWidth*2; ++i) {
-	r.x = m_frameWidth*2 - i; r.y = i; r.width = i; r.height = 1;
-	rl.append(r);
+    for (i = 1; i < FRAME_WIDTH*2; ++i) {
+	rl.appendRect(FRAME_WIDTH*2 - i, i, i, 1);
     }
 
     XShapeCombineRectangles
@@ -573,9 +479,8 @@ void Border::shapeResize()
 
     rl.remove_all();
 
-    for (i = 0; i < m_frameWidth*2 - 3; ++i) {
-	r.x = m_frameWidth*2 - i - 1; r.y = i + 3; r.width = 1; r.height = 1;
-	rl.append(r);
+    for (i = 0; i < FRAME_WIDTH*2 - 3; ++i) {
+	rl.appendRect(FRAME_WIDTH*2 - i - 1, i + 3, 1, 1);
     }
 
     XShapeCombineRectangles
@@ -589,8 +494,7 @@ void Border::shapeResize()
 
 void Border::setFrameVisibility(Boolean visible, int w, int h)
 {
-    XRectangle r;
-    RectangleList rl;
+    BorderRectangleList rl;
 
     if (CONFIG_PROD_SHAPE) {
 	shapeParent(w, h);
@@ -604,23 +508,17 @@ void Border::setFrameVisibility(Boolean visible, int w, int h)
 
     // Bounding rectangles
 
-    r.x = m_tabWidth + w + 1; r.y = 0;
-    r.width = m_frameWidth + 1; r.height = m_frameWidth;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + w + 1, 0, FRAME_WIDTH + 1, FRAME_WIDTH);
 
-    r.x = m_tabWidth + 2; r.y = m_tabTopHeight + 2;
-    r.width = w; r.height = m_frameWidth - m_tabTopHeight - 2;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + 2, TAB_TOP_HEIGHT + 2, w,
+		  FRAME_WIDTH - TAB_TOP_HEIGHT - 2);
 
     // for button
-    r.width = r.height = m_tabWidth - m_tabTopHeight*2 - 4;
-    r.x = r.y = (m_tabWidth + 2 - r.width) / 2;
-    rl.append(r);
+    int ww = m_tabWidth - TAB_TOP_HEIGHT*2 - 4;
+    rl.appendRect((m_tabWidth + 2 - ww) / 2, (m_tabWidth+2 - ww) / 2, ww, ww);
 
-    r.x = m_tabWidth + 2; r.y = m_frameWidth;
-    r.width = m_frameWidth - 2;
-    r.height = m_tabHeight + m_tabWidth - m_frameWidth - 2;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + 2, FRAME_WIDTH,
+		  FRAME_WIDTH - 2, m_tabHeight + m_tabWidth - FRAME_WIDTH - 2);
 
     // swap last two if sorted wrong
     if (rl.item(rl.count()-2).y > rl.item(rl.count()-1).y) {
@@ -628,9 +526,12 @@ void Border::setFrameVisibility(Boolean visible, int w, int h)
 	rl.remove(rl.count()-3);
     }
 
-    r.x -= 1; r.y += r.height;
-    r.width += 1; r.height = h - r.height + 2;
-    rl.append(r);
+    int final = rl.count();
+    rl.append(rl.item(final-1));
+    rl.item(final).x -= 1;
+    rl.item(final).y += rl.item(final).height;
+    rl.item(final).width += 1;
+    rl.item(final).height = h - rl.item(final).height + 2;
 
     XShapeCombineRectangles(display(), m_parent, ShapeBounding,
 			    0, 0, rl.array(0, rl.count()), rl.count(),
@@ -639,22 +540,17 @@ void Border::setFrameVisibility(Boolean visible, int w, int h)
 
     // Clip rectangles
 
-    r.x = m_tabWidth + w + 1; r.y = 1;
-    r.width = m_frameWidth; r.height = m_frameWidth - 1;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + w + 1, 1, FRAME_WIDTH, FRAME_WIDTH - 1);
 
-    r.x = m_tabWidth + 2; r.y = m_tabTopHeight + 2;
-    r.width = w; r.height = m_frameWidth - m_tabTopHeight - 2;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + 2, TAB_TOP_HEIGHT + 2, w,
+		  FRAME_WIDTH - TAB_TOP_HEIGHT - 2);
 
     // for button
-    r.width = r.height = m_tabWidth - m_tabTopHeight*2 - 6;
-    r.x = r.y = (m_tabWidth + 2 - r.width) / 2;
-    rl.append(r);
+    ww = m_tabWidth - TAB_TOP_HEIGHT*2 - 6;
+    rl.appendRect((m_tabWidth + 2 - ww) / 2, (m_tabWidth+2 - ww) / 2, ww, ww);
 
-    r.x = m_tabWidth + 2; r.y = m_frameWidth;
-    r.width = m_frameWidth - 2; r.height = h - m_frameWidth;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + 2, FRAME_WIDTH,
+		  FRAME_WIDTH - 2, h - FRAME_WIDTH);
 
     // swap last two if sorted wrong
     if (rl.item(rl.count()-2).y > rl.item(rl.count()-1).y) {
@@ -662,9 +558,7 @@ void Border::setFrameVisibility(Boolean visible, int w, int h)
 	rl.remove(rl.count()-3);
     }
 
-    r.x = m_tabWidth + 2; r.y = h;
-    r.width = m_frameWidth - 2; r.height = m_frameWidth + 1;
-    rl.append(r);
+    rl.appendRect(m_tabWidth + 2, h, FRAME_WIDTH - 2, FRAME_WIDTH + 1);
 
     XShapeCombineRectangles(display(), m_parent, ShapeClip,
 			    0, 0, rl.array(0, rl.count()), rl.count(),
@@ -676,8 +570,6 @@ void Border::setFrameVisibility(Boolean visible, int w, int h)
     } else {
 	XUnmapWindow(display(), m_resize);
     }
-
-//    XSync(display(), False);	// doesn't seem to help much
 }
 
 
@@ -702,7 +594,7 @@ void Border::configure(int x, int y, int w, int h,
 	     m_borderPixel, m_buttonBackgroundPixel);
 
 	m_resize = XCreateWindow
-	    (display(), m_child, 1, 1, m_frameWidth*2, m_frameWidth*2, 0,
+	    (display(), m_child, 1, 1, FRAME_WIDTH*2, FRAME_WIDTH*2, 0,
 	     CopyFromParent, InputOutput, CopyFromParent, 0L, 0);
 
 	shapeResize();
@@ -721,14 +613,6 @@ void Border::configure(int x, int y, int w, int h,
 		     ButtonPressMask | ButtonReleaseMask/* | LeaveWindowMask*/);
 	XSelectInput(display(), m_resize, ButtonPressMask | ButtonReleaseMask);
 	mask |= CWX | CWY | CWWidth | CWHeight | CWBorderWidth;
-
-	if (m_backgroundPixmap) {
-	    XSetWindowAttributes wa;
-	    wa.background_pixmap = m_backgroundPixmap;
-	    XChangeWindowAttributes(display(), m_parent, CWBackPixmap, &wa);
-	    XChangeWindowAttributes(display(), m_tab,    CWBackPixmap, &wa);
-	    XChangeWindowAttributes(display(), m_button, CWBackPixmap, &wa);
-	}
     }
 
     XWindowChanges wc;
@@ -744,8 +628,8 @@ void Border::configure(int x, int y, int w, int h,
     unsigned long rmask = 0L;
     if (mask & CWWidth)  rmask |= CWX;
     if (mask & CWHeight) rmask |= CWY;
-    wc.x = w - m_frameWidth*2;
-    wc.y = h - m_frameWidth*2;
+    wc.x = w - FRAME_WIDTH*2;
+    wc.y = h - FRAME_WIDTH*2;
     XConfigureWindow(display(), m_resize, rmask, &wc);
     
     if (force ||
@@ -778,8 +662,9 @@ void Border::configure(int x, int y, int w, int h,
 	resizeTab(h);
     }
 
-    wc.x = wc.y = m_tabTopHeight + 2;
-    wc.width = wc.height = m_tabWidth - m_tabTopHeight*2 - 4;
+    wc.x = TAB_TOP_HEIGHT + 2;
+    wc.y = wc.x;
+    wc.width = wc.height = m_tabWidth - TAB_TOP_HEIGHT*2 - 4;
     XConfigureWindow(display(), m_button, mask, &wc);
 }
 

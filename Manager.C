@@ -28,7 +28,7 @@ WindowManager::WindowManager() :
     m_menuGC(0), m_menuWindow(0), m_menuFont(0), m_focusChanging(False)
 {
     fprintf(stderr, "\nwm2: Copyright (c) 1996-7 Chris Cannam."
-	    "  Third release, January 1997\n"
+	    "  Fourth release, March 1997\n"
 	    "     Parts derived from 9wm Copyright (c) 1994-96 David Hogan\n"
 	    "     %s\n     Copying and redistribution encouraged.  "
 	    "No warranty.\n\n", XV_COPYRIGHT);
@@ -68,12 +68,6 @@ WindowManager::WindowManager() :
 	fprintf(stderr, "     Shape prodding on.  ");
     } else {
 	fprintf(stderr, "     Shape prodding off.  ");
-    }
-
-    if (CONFIG_USE_PIXMAPS) {
-	fprintf(stderr, "Fancy borders.");
-    } else {
-	fprintf(stderr, "Plain borders.");
     }
 
     fprintf(stderr, "\n     (To reconfigure, simply edit and recompile.)\n\n");
@@ -282,22 +276,12 @@ void WindowManager::initialiseScreen()
     XChangeWindowAttributes(m_display, m_root, CWCursor | CWEventMask, &attr);
     XSync(m_display, False);
 
-    XColor nearest;
-
-    if (!XAllocNamedColor(m_display, m_defaultColormap,
-			  CONFIG_MENU_FOREGROUND, &nearest, &temp)) {
-	fatal("couldn't load menu foreground colour");
-    } else m_menuForegroundPixel = nearest.pixel;
-    
-    if (!XAllocNamedColor(m_display, m_defaultColormap,
-			  CONFIG_MENU_BACKGROUND, &nearest, &temp)) {
-	fatal("couldn't load menu background colour");
-    } else m_menuBackgroundPixel = nearest.pixel;
-    
-    if (!XAllocNamedColor(m_display, m_defaultColormap,
-			  CONFIG_MENU_BORDERS, &nearest, &temp)) {
-	fatal("couldn't load menu border colour");
-    } else m_menuBorderPixel = nearest.pixel;
+    m_menuForegroundPixel =
+	allocateColour(CONFIG_MENU_FOREGROUND, "menu foreground");
+    m_menuBackgroundPixel =
+	allocateColour(CONFIG_MENU_BACKGROUND, "menu background");
+    m_menuBorderPixel =
+	allocateColour(CONFIG_MENU_BORDERS, "menu border");
 
     m_menuWindow = XCreateSimpleWindow
 	(m_display, m_root, 0, 0, 1, 1, 1,
@@ -325,6 +309,22 @@ void WindowManager::initialiseScreen()
     m_menuGC = XCreateGC
 	(display(), root(), GCForeground | GCBackground |
 	 GCFunction | GCLineWidth | GCSubwindowMode | GCFont, &values);
+}
+
+
+unsigned long WindowManager::allocateColour(char *name, char *desc)
+{
+    XColor nearest, ideal;
+
+    if (!XAllocNamedColor
+	(display(), DefaultColormap(display(), m_screenNumber), name,
+	 &nearest, &ideal)) {
+
+	char error[100];
+	sprintf(error, "couldn't load %s colour", desc);
+	fatal(error);
+
+    } else return nearest.pixel;
 }
 
 
@@ -399,10 +399,6 @@ Client *WindowManager::windowToClient(Window w, Boolean create)
     for (int i = m_clients.count()-1; i >= 0; --i) {
 
 	if (m_clients.item(i)->hasWindow(w)) {
-
-// fprintf(stderr, "WindowManager::windowToClient: located %p (\"%s\")\n",
-//	    m_clients.item(i), m_clients.item(i)->label());
-
 	    return m_clients.item(i);
 	}
     }
@@ -411,9 +407,6 @@ Client *WindowManager::windowToClient(Window w, Boolean create)
     else {
 	Client *newC = new Client(this, w);
 	m_clients.append(newC);
-
-//	fprintf(stderr, "I now have %d clients\n", (int)m_clients.count());
-
 	return newC;
     }
 }

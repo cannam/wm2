@@ -19,7 +19,7 @@ public:
     void gravitate(Boolean invert);
     void installColormap();
     void unreparent();
-    void withdraw();
+    void withdraw(Boolean = True);
     void hide();
     void unhide(Boolean map);
     void rename();

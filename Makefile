@@ -1,11 +1,10 @@
 
-# if you want pixmaps you'll need Xpm, so add -lXpm to the next line
 LIBS	=  -L/usr/X11/lib -lXext -lX11 -lXmu -lm
 
 CC	= gcc
 CCC	= gcc
 CFLAGS	= -O2
-OBJECTS	= Border.o Buttons.o Client.o Events.o Main.o Manager.o Rotated.o listimpl.o
+OBJECTS	= Border.o Buttons.o Client.o Events.o Main.o Manager.o Rotated.o
 
 .c.o:
 	$(CC) -c $(CFLAGS) $<

@@ -25,6 +25,7 @@
 // windows such as xvt).
 #define CONFIG_AUTO_RAISE_DELAY       400
 #define CONFIG_POINTER_STOPPED_DELAY  80
+#define CONFIG_DESTROY_WINDOW_DELAY   1500L
 
 #define CONFIG_TAB_FOREGROUND	  "black"
 #define CONFIG_TAB_BACKGROUND     "gray80"
@@ -36,9 +37,6 @@
 #define CONFIG_MENU_BACKGROUND    "gray80"
 #define CONFIG_MENU_BORDERS       "black"
 
-#define CONFIG_USE_PIXMAPS        False
-
-// I like 7 for plain frames, or 8 if using pixmaps
 #define CONFIG_FRAME_THICKNESS    7
 
 // If CONFIG_PROD_SHAPE is True, all frame element shapes will be

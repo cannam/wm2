@@ -146,8 +146,9 @@ void WindowManager::menu(XButtonEvent *e)
 
     if (CONFIG_EVERYTHING_ON_ROOT_MENU) {
 	for (i = 0; i < m_clients.count(); ++i) {
-	    if (m_clients.item(i)->isNormal())
+	    if (m_clients.item(i)->isNormal()) {
 		clients.append(m_clients.item(i));
+	    }
 	}
     }
     int n = clients.count() + 1;
@@ -653,7 +654,7 @@ void Border::eventButton(XButtonEvent *e)
     int x = e->x;
     int y = e->y;
     int action = 1;
-    int buttonSize = m_tabWidth - m_tabTopHeight*2 - 4;
+    int buttonSize = m_tabWidth - TAB_TOP_HEIGHT*2 - 4;
 
     XFillRectangle(display(), m_button, m_drawGC, 0, 0, buttonSize, buttonSize);
 
@@ -661,7 +662,7 @@ void Border::eventButton(XButtonEvent *e)
 
 	found = False;
 
-	if (tdiff > 1500L && action == 1) {
+	if (tdiff > CONFIG_DESTROY_WINDOW_DELAY && action == 1) {
 	    windowManager()->installCursor(WindowManager::DeleteCursor);
 	    action = 2;
 	}

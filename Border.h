@@ -8,6 +8,15 @@
 class Client;
 class WindowManager;
 
+// These distances exclude the 1-pixel borders.  You could probably
+// change these a certain amount before breaking the shoddy code in
+// the rest of this file.
+
+#define TAB_TOP_HEIGHT 2
+#define FRAME_WIDTH CONFIG_FRAME_THICKNESS
+#define TRANSIENT_FRAME_WIDTH 4
+// NB frameTopHeight = frameHeight-tabTopHeight
+
 class Border {			// friend of client
 public:
     Border(Client *const, Window child);
@@ -39,11 +48,11 @@ public:
     void eventButton(XButtonEvent *); // in Buttons.C
 
     int yIndent() {
-	return isTransient() ? m_transientFrameWidth + 1 : m_frameWidth + 1;
+	return isTransient() ? TRANSIENT_FRAME_WIDTH + 1 : FRAME_WIDTH + 1;
     }
     int xIndent() {
-	return isTransient() ? m_transientFrameWidth + 1 :
-	    m_tabWidth + m_frameWidth + 1;
+	return isTransient() ? TRANSIENT_FRAME_WIDTH + 1 :
+	    m_tabWidth + FRAME_WIDTH + 1;
     }
 
     Boolean coordsInHole(int, int); // in Events.C of all places
@@ -78,9 +87,6 @@ private:
 private:
     int        m_tabHeight;	// depends on the label
     static int m_tabWidth;	// depends on the label font
-    static int m_tabTopHeight;
-    static int m_frameWidth;	// NB frameTopHeight = frameHeight-tabTopHeight
-    static int m_transientFrameWidth;
     static XRotFontStruct *m_tabFont;
     static GC m_drawGC;
     static unsigned long m_foregroundPixel;
@@ -88,7 +94,6 @@ private:
     static unsigned long m_frameBackgroundPixel;
     static unsigned long m_buttonBackgroundPixel;
     static unsigned long m_borderPixel;
-    static Pixmap m_backgroundPixmap;
 };
 
 
