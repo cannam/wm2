@@ -21,7 +21,7 @@ public:
     Client *windowToClient(Window, Boolean create = False);
     Client *activeClient() { return m_activeClient; }
     Boolean raiseTransients(Client *); // true if raised any
-    int timestamp(Boolean reset);
+    Time timestamp(Boolean reset);
     void clearFocus();
 
     void setActiveClient(Client *const c) { m_activeClient = c; }
@@ -40,6 +40,9 @@ public:
     void installCursor(RootCursor);
     void installCursorOnWindow(RootCursor, Window);
     void installColormap(Colormap);
+
+    void considerFocusChange(Client *, Window, Time timestamp);
+    void stopConsideringFocus();
 
     // shouldn't really be public
     int attemptGrab(Window, Window, int, int);
@@ -97,6 +100,15 @@ private:
     const char *const menuLabel(int);
     void menu(XButtonEvent *);
     void spawn();
+    void circulate(Boolean activeFirst);
+
+    Boolean m_focusChanging;	// checking times for focus change
+    Client *m_focusCandidate;
+    Window  m_focusCandidateWindow;
+    Time    m_focusTimestamp;	// time of last crossing event
+    Boolean m_focusPointerMoved;
+    Boolean m_focusPointerNowStill;
+    void checkDelaysForFocus();
 
     void nextEvent(XEvent *);	// return
 

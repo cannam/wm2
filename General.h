@@ -6,6 +6,10 @@
 #include <sys/types.h>
 #include <sys/time.h>
 
+#ifdef _POSIX_SOURCE
+#undef _POSIX_SOURCE
+#endif
+
 #define _POSIX_SOURCE 1
 
 #include <stdio.h>

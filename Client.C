@@ -16,6 +16,8 @@ Client::Client(WindowManager *const wm, Window w) :
     m_state(WithdrawnState),
     m_managed(False),
     m_reparenting(False),
+    m_stubborn(False),
+    m_lastPopTime(0L),
     m_colormap(None),
     m_colormapWinCount(0),
     m_colormapWindows(NULL),
@@ -71,7 +73,7 @@ void Client::release()
 	    if (m_revert) {
 		windowManager()->setActiveClient(m_revert);
 		m_revert->activate();
-	    } else windowManager()->clearFocus();
+	    } else windowManager()->setActiveClient(0);// windowManager()->clearFocus();
 	} else {
 	    windowManager()->setActiveClient(0);
 	}
@@ -195,6 +197,9 @@ void Client::manage(Boolean mapped)
 
     gravitate(False);
 
+    // zeros are iffy, should be calling some Manager method
+    int dw = DisplayWidth(display(), 0), dh = DisplayHeight(display(), 0);
+
     if (m_w < m_minWidth) {
 	m_w = m_minWidth; m_fixedSize = False; reshape = True;
     }
@@ -202,14 +207,15 @@ void Client::manage(Boolean mapped)
 	m_h = m_minHeight; m_fixedSize = False; reshape = True;
     }
 
-    // zeros are iffy, should be calling some Manager method
+    if (m_w > dw - 8) m_w = dw - 8;
+    if (m_h > dh - 8) m_h = dh - 8;
 
-    if (m_x > DisplayWidth(display(), 0) - m_border->xIndent()) {
-	m_x = DisplayWidth(display(), 0) - m_border->xIndent();
+    if (m_x > dw - m_border->xIndent()) {
+	m_x = dw - m_border->xIndent();
     }
 
-    if (m_y > DisplayHeight(display(), 0) - m_border->yIndent()) {
-	m_y = DisplayHeight(display(), 0) - m_border->yIndent();
+    if (m_y > dh - m_border->yIndent()) {
+	m_y = dh - m_border->yIndent();
     }
 
     if (m_x < m_border->xIndent()) m_x = m_border->xIndent();
@@ -226,28 +232,48 @@ void Client::manage(Boolean mapped)
     // (support for shaped windows absent)
 
     XAddToSaveSet(d, m_window);
+    m_managed = True;
 
     if (shouldHide) hide();
     else {
 	XMapWindow(d, m_window);
 	m_border->map();
+	setState(NormalState);
 
 	if (CONFIG_CLICK_TO_FOCUS ||
 	    (m_transient != None && activeClient() &&
 	    activeClient()->m_window == m_transient)) {
 	    activate();
+	    mapRaised();
 	} else {
 	    deactivate();
 	}
-
-	setState(NormalState);
     }
     
     if (activeClient() && !isActive()) {
 	activeClient()->installColormap();
     }
 
-    m_managed = True;
+    if (CONFIG_AUTO_RAISE) {
+	m_windowManager->stopConsideringFocus();
+	focusIfAppropriate(False);
+    }
+}
+
+
+void Client::selectOnMotion(Window w, Boolean select)
+{
+    if (!CONFIG_AUTO_RAISE) return;
+    if (!w || w == root()) return;
+
+    if (w == m_window || m_border->hasWindow(w)) {
+	XSelectInput(display(), m_window, // not "w"
+		     ColormapChangeMask | EnterWindowMask |
+		     PropertyChangeMask | FocusChangeMask |
+		     (select ? PointerMotionMask : 0L));
+    } else {
+	XSelectInput(display(), w, select ? PointerMotionMask : 0L);
+    }
 }
 
 
@@ -271,7 +297,7 @@ void Client::activate()
 
     if (isActive()) {
 	decorate(True);
-	if (CONFIG_RAISE_ON_FOCUS) mapRaised();
+	if (CONFIG_AUTO_RAISE || CONFIG_RAISE_ON_FOCUS) mapRaised();
 	return;
     }
 
@@ -298,7 +324,7 @@ void Client::activate()
     while (m_revert && !m_revert->isNormal()) m_revert = m_revert->revertTo();
 
     windowManager()->setActiveClient(this);
-    if (CONFIG_RAISE_ON_FOCUS) mapRaised();
+//    if (CONFIG_AUTO_RAISE || CONFIG_RAISE_ON_FOCUS) mapRaised();
     decorate(True);
 
     installColormap();		// new!
@@ -608,7 +634,8 @@ void Client::hide()
     m_border->unmap();
     XUnmapWindow(display(), m_window);
 
-    if (activeClient() == this) windowManager()->clearFocus();
+//    if (isActive()) windowManager()->setActiveClient(0);
+    if (isActive()) windowManager()->clearFocus();
 
     setState(IconicState);
     windowManager()->addToHiddenList(this);
@@ -629,7 +656,8 @@ void Client::unhide(Boolean map)
 	XMapWindow(display(), m_window);
 	mapRaised();
 
-	if (CONFIG_CLICK_TO_FOCUS) activate();
+	if (CONFIG_AUTO_RAISE) focusIfAppropriate(False);
+	else if (CONFIG_CLICK_TO_FOCUS) activate();
     }
 }
 
@@ -660,10 +688,6 @@ void Client::withdraw()
 
     gravitate(True);
     XReparentWindow(display(), m_window, root(), m_x, m_y);
-
-//    delete m_border;
-//    m_border = new Border(this, m_window);
-//    m_parent = root();
 
     gravitate(False);
 

@@ -88,6 +88,7 @@ private:
     static unsigned long m_frameBackgroundPixel;
     static unsigned long m_buttonBackgroundPixel;
     static unsigned long m_borderPixel;
+    static Pixmap m_backgroundPixmap;
 };
 
 

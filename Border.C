@@ -4,12 +4,17 @@
 #include "Manager.h"
 #include "Rotated.h"
 
+#if CONFIG_USE_PIXMAPS != False
+#include <X11/xpm.h>
+#include "background.xpm"
+#endif
+
 // These distances all exclude the 1-pixel borders.  You could
 // probably change these a certain amount before breaking the shoddy
 // code in the rest of this file.
 
 int Border::m_tabTopHeight = 2;
-int Border::m_frameWidth = 7;
+int Border::m_frameWidth = CONFIG_FRAME_THICKNESS;
 int Border::m_transientFrameWidth = 4;
 
 // These are degenerate initialisations, don't change them
@@ -22,6 +27,9 @@ unsigned long Border::m_backgroundPixel;
 unsigned long Border::m_frameBackgroundPixel;
 unsigned long Border::m_buttonBackgroundPixel;
 unsigned long Border::m_borderPixel;
+Pixmap Border::m_backgroundPixmap = None;
+
+static int borderCounter = 0;
 
 
 Border::Border(Client *const c, Window child) :
@@ -87,7 +95,23 @@ Border::Border(Client *const c, Window child) :
 	if (!m_drawGC) {
 	    windowManager()->fatal("couldn't allocate border GC");
 	}
+
+#if CONFIG_USE_PIXMAPS != False
+	if (CONFIG_USE_PIXMAPS) {
+	    XpmAttributes attrs;
+	    attrs.valuemask = 0L;
+	    if (XpmCreatePixmapFromData(display(), root(), background,
+					&m_backgroundPixmap, NULL, &attrs)
+		!= XpmSuccess) {
+		fprintf(stderr, "wm2: couldn't create background pixmap\n"); 
+		m_backgroundPixmap = None;
+	    }
+	} else
+#endif
+	    m_backgroundPixmap = None;
     }
+
+    ++borderCounter;
 }
 
 
@@ -106,6 +130,13 @@ Border::~Border()
     }
 
     if (m_label) free(m_label);
+
+    if (--borderCounter == 0) {
+	XFreeGC(display(), m_drawGC);
+	if (m_backgroundPixmap != None) {
+	    XFreePixmap(display(), m_backgroundPixmap);
+	}
+    }
 }
 
 
@@ -456,7 +487,7 @@ void Border::resizeTab(int h)
 	operation = ShapeSubtract;
     }
 
-    r.x = 0; r.y = shorter - 2;
+    r.x = 0; r.y = shorter /*- 2*/;
     r.width = m_tabWidth + 2; r.height = longer - shorter;
 
     XShapeCombineRectangles(display(), m_parent, ShapeBounding,
@@ -473,14 +504,16 @@ void Border::resizeTab(int h)
     XShapeCombineRectangles(display(), m_tab, ShapeClip,
 			    0, 0, &r, 1, operation, YXBanded);
 
-    // restore a bit of the frame edge
-    r.x = m_tabWidth + 1; r.y = shorter;
-    r.width = m_frameWidth - 1; r.height = longer - shorter;
-    XShapeCombineRectangles(display(), m_parent, ShapeBounding,
-			    0, 0, &r, 1, ShapeUnion, YXBanded);
+    if (m_client->isActive()) {
+	// restore a bit of the frame edge
+	r.x = m_tabWidth + 1; r.y = shorter;
+	r.width = m_frameWidth - 1; r.height = longer - shorter;
+	XShapeCombineRectangles(display(), m_parent, ShapeBounding,
+				0, 0, &r, 1, ShapeUnion, YXBanded);
+    }
 
     for (i = 1; i < m_tabWidth - 1; ++i) {
-	r.x = i; r.y = m_tabHeight + i - 3;
+	r.x = i; r.y = m_tabHeight + i - 1/*3*/;
 	r.width = m_tabWidth - i + 2; r.height = 1;
 	rl.append(r);
     }
@@ -688,6 +721,14 @@ void Border::configure(int x, int y, int w, int h,
 		     ButtonPressMask | ButtonReleaseMask/* | LeaveWindowMask*/);
 	XSelectInput(display(), m_resize, ButtonPressMask | ButtonReleaseMask);
 	mask |= CWX | CWY | CWWidth | CWHeight | CWBorderWidth;
+
+	if (m_backgroundPixmap) {
+	    XSetWindowAttributes wa;
+	    wa.background_pixmap = m_backgroundPixmap;
+	    XChangeWindowAttributes(display(), m_parent, CWBackPixmap, &wa);
+	    XChangeWindowAttributes(display(), m_tab,    CWBackPixmap, &wa);
+	    XChangeWindowAttributes(display(), m_button, CWBackPixmap, &wa);
+	}
     }
 
     XWindowChanges wc;

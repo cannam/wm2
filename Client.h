@@ -54,6 +54,10 @@ public:
     void sendMessage(Atom, long);
     void sendConfigureNotify();
 
+    void activateAndWarp();
+    void focusIfAppropriate(Boolean);
+    void selectOnMotion(Window, Boolean);
+
     /* for call from within: */
 
     void fatal(char *m)    { m_windowManager->fatal(m);              }
@@ -105,6 +109,8 @@ private:
     int m_protocol;
     Boolean m_managed;
     Boolean m_reparenting;
+    Boolean m_stubborn;		// keeps popping itself to the front
+    Time m_lastPopTime;
 
     char *m_name;
     char *m_iconName;

@@ -25,36 +25,58 @@ implementPList(ClientList, Client);
 
 
 WindowManager::WindowManager() :
-    m_menuGC(0), m_menuWindow(0), m_menuFont(0)
+    m_menuGC(0), m_menuWindow(0), m_menuFont(0), m_focusChanging(False)
 {
-    fprintf(stderr, "\nwm2: Copyright (c) 1996 Chris Cannam\n"
+    fprintf(stderr, "\nwm2: Copyright (c) 1996-7 Chris Cannam."
+	    "  Third release, January 1997\n"
 	    "     Parts derived from 9wm Copyright (c) 1994-96 David Hogan\n"
 	    "     %s\n     Copying and redistribution encouraged.  "
-	    "No warranty.\n", XV_COPYRIGHT);
+	    "No warranty.\n\n", XV_COPYRIGHT);
 
-    if (CONFIG_CLICK_TO_FOCUS) {
-	if (CONFIG_RAISE_ON_FOCUS) {
-	    fprintf(stderr, "     Click to focus.  ");
+    if (CONFIG_AUTO_RAISE) {
+	if (CONFIG_CLICK_TO_FOCUS) {
+	    fatal("can't have auto-raise-with-delay with click-to-focus");
+	} else if (CONFIG_RAISE_ON_FOCUS) {
+	    fatal("can't have raise-on-focus AND auto-raise-with-delay");
 	} else {
-	    fatal("can't have click to focus without auto-raise");
+	    fprintf(stderr, "     Focus follows, auto-raise with delay.  ");
 	}
+
     } else {
-	if (CONFIG_RAISE_ON_FOCUS) {
-	    fprintf(stderr, "     Focus follows, auto-raise.  ");
+	if (CONFIG_CLICK_TO_FOCUS) {
+	    if (CONFIG_RAISE_ON_FOCUS) {
+		fprintf(stderr, "     Click to focus.  ");
+	    } else {
+		fatal("can't have click-to-focus without raise-on-focus");
+	    }
 	} else {
-	    fprintf(stderr, "     Focus follows pointer.  ");
+	    if (CONFIG_RAISE_ON_FOCUS) {
+		fprintf(stderr, "     Focus follows, auto-raise.  ");
+	    } else {
+		fprintf(stderr, "     Focus follows pointer.  ");
+	    }
 	}
-    }
-
-    if (CONFIG_PROD_SHAPE) {
-	fprintf(stderr, "Shape prodding.  ");
     }
 
     if (CONFIG_EVERYTHING_ON_ROOT_MENU) {
-	fprintf(stderr, "All clients on menu.\n\n");
+	fprintf(stderr, "All clients on menu.\n");
     } else {
-	fprintf(stderr, "Hidden clients only on menu.\n\n");
+	fprintf(stderr, "Hidden clients only on menu.\n");
     }
+
+    if (CONFIG_PROD_SHAPE) {
+	fprintf(stderr, "     Shape prodding on.  ");
+    } else {
+	fprintf(stderr, "     Shape prodding off.  ");
+    }
+
+    if (CONFIG_USE_PIXMAPS) {
+	fprintf(stderr, "Fancy borders.");
+    } else {
+	fprintf(stderr, "Plain borders.");
+    }
+
+    fprintf(stderr, "\n     (To reconfigure, simply edit and recompile.)\n\n");
 
     m_display = XOpenDisplay(NULL);
     if (!m_display) fatal("can't open display");
@@ -94,10 +116,9 @@ WindowManager::WindowManager() :
     XSync(m_display, False);
     m_initialising = False;
     m_returnCode = 0;
-
+    
     clearFocus();
     scanInitialWindows();
-
     loop();
 }
     
@@ -329,7 +350,7 @@ void WindowManager::installCursorOnWindow(RootCursor c, Window w)
 }
 	
 
-int WindowManager::timestamp(Boolean reset)
+Time WindowManager::timestamp(Boolean reset)
 {
     if (reset) m_currentTime = CurrentTime;
 
@@ -411,7 +432,10 @@ void WindowManager::clearFocus()
     static Window w = 0;
     Client *active = activeClient();
 
-    if (!CONFIG_CLICK_TO_FOCUS) return;
+    if (CONFIG_AUTO_RAISE || !CONFIG_CLICK_TO_FOCUS) {
+	setActiveClient(0);
+	return;
+    }
 
     if (active) {
 

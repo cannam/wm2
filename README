@@ -2,11 +2,11 @@
 wm2 -- a window manager
 =======================
 
-wm2 is a new window manager for X.  It provides an unusual style of
-window decoration and as little functionality as I feel comfortable
-with in a window manager.  wm2 is not configurable, except by editing
-the source and recompiling the code, and is really intended for people
-who don't particularly want their window manager to be too friendly.
+wm2 is a window manager for X.  It provides an unusual style of window
+decoration and as little functionality as I feel comfortable with in a
+window manager.  wm2 is not configurable, except by editing the source
+and recompiling the code, and is really intended for people who don't
+particularly want their window manager to be too friendly.
 
 wm2 provides:
 
@@ -24,8 +24,8 @@ wm2 provides:
 This release
 ============
 
-This is the second release of wm2.  It differs in some ways from the
-first release.
+This is the third release of wm2, made in January 1997.  It differs in
+some ways from the first and second releases.
 
 
 Building wm2
@@ -34,8 +34,10 @@ Building wm2
 You will need a Unix machine, X libraries and a C++ compiler such as
 gcc.  You will also need a mouse, with at least one button.  Your X
 server and libraries must be R4 or newer and must support the Shape
-extension.  wm2 does NOT support multi-screen displays, because I
-don't have anything to test multi-screen code on.
+extension.  If you want to use frame background-pixmaps (see "Pixmaps"
+below), you will need the Xpm header and library.  wm2 does NOT
+support multi-screen displays, because I don't have anything to test
+multi-screen code on.
 
 wm2 makes relatively heavy demands on the performance of your X
 server, because of the use of shaped windows, but it shouldn't place
@@ -67,11 +69,7 @@ definitions in Config.h and recompiling).
 Available window manipulations are:
 
  -- To focus a window: depends on the focus policy you selected
-    in Config.h before compiling.  The default distribution has
-    focus-follows-pointer; if you prefer click-to-focus, edit
-    and rebuild.  You can also choose focus-follows with auto-
-    raise, which should work a bit better in the second release
-    than it did in the first.
+    in Config.h before compiling.  See "Focus policy", below.
 
  -- To raise a window: click on its tab or frame, unless you have
     auto-raise on focus set in Config.h.
@@ -100,10 +98,50 @@ Available window manipulations are:
     the enclosing window frame.
 
  -- To lower a window: click with the right mouse button on its
-    tab or frame.  (This is the only new feature in the second
+    tab or frame.  (This was the only new feature in the second
     release.)
 
+ -- To exit from wm2: move the mouse pointer to the very edge of the
+    screen at the extreme lower-right corner, and click left button on
+    the root window for the root menu.  The menu should have an extra
+    option labelled "Exit wm2"; select this.  (This is a new feature
+    in the third release.)
+
 All move and resize operations are opaque.
+
+
+Focus policy
+============
+
+Config.h contains settings for focus policy.  There are three things
+you can define to either True or False: CONFIG_CLICK_TO_FOCUS,
+CONFIG_RAISE_ON_FOCUS and CONFIG_AUTO_RAISE.  The first two are
+connected: together they define a focus policy.  The third is a
+separate focus policy on its own and will only work if the first two
+are both False.  CONFIG_AUTO_RAISE differs from
+(!CONFIG_CLICK_TO_FOCUS && CONFIG_RAISE_ON_FOCUS) only in that it
+provides a short delay before raising each window.  The delay is also
+definable in Config.h.
+
+
+Pixmaps
+=======
+
+This third release of wm2 will allow you to specify a background
+pixmap for the window frames.  If you set CONFIG_USE_PIXMAPS to True
+in Config.h and supply a file ./background.xpm which contains an Xpm
+pixmap called "background", wm2 will use this to colour in the frames.
+An especially unpleasant example file, cribbed and modified from
+http://home.netscape.com/assist/net_sites/bg/marble/greenred_marble.gif,
+is included, although you're advised to find your own.
+
+
+xterm
+=====
+
+Some versions of xterm run badly under wm2.  If you use xterm and find
+that it refreshes the window excessively slowly, you might like to try
+using xvt or rxvt instead.
 
 
 Credits
@@ -122,21 +160,16 @@ font-rotation routines.
 
 The sideways tabs on the window frames were Andy Green's idea.
 
-
-Bugs &c
-=======
-
-If you find a bug, please report it to me (preferably with a fix).  If
-you want a new feature added, you can try asking but I'm unlikely to
-do it (unless it's something really original and very easy to do --
-which seems improbable).  If you've already written the code to add
-the feature, I'd probably quite like to see it but I'm unlikely to
-include it in the main distribution unless I really like it (or it's
-something "essential", like multi-headed display support).
-
 If you want to hack the code into something else for your own
 amusement, please go ahead.  Feel free to modify and redistribute, as
 long as you retain the original copyrights as appropriate.
+
+
+Bugs
+====
+
+The principal bug is that wm2 now has too many features.  That aside,
+if you find a bug, please report it to me (preferably with a fix).
 
 
 

@@ -13,6 +13,11 @@
 
 void WindowManager::eventButton(XButtonEvent *e)
 {
+    if (e->button == Button3) {
+	circulate(e->window == e->root);
+	return;
+    }
+
     Client *c = windowToClient(e->window);
 
     if (e->window == e->root) {
@@ -27,14 +32,51 @@ void WindowManager::eventButton(XButtonEvent *e)
 }
 
 
+void WindowManager::circulate(Boolean activeFirst)
+{
+    Client *c = 0;
+    if (activeFirst) c = m_activeClient;
+
+    if (!c) {
+
+	int i, j;
+
+	if (!m_activeClient) i = -1;
+	else {
+	    for (i = 0; i < m_clients.count(); ++i) {
+		if (m_clients.item(i) == m_activeClient) break;
+	    }
+
+	    if (i >= m_clients.count()-1) i = -1;
+	}
+
+	for (j = i + 1;
+	     (!m_clients.item(j)->isNormal() ||
+	      m_clients.item(j)->isTransient()); ++j) {
+	    if (j >= m_clients.count() - 1) j = -1;
+	    if (j == i) return; // no suitable clients
+	}
+
+	c = m_clients.item(j);
+    }
+
+    c->activateAndWarp();
+}
+
+
+void Client::activateAndWarp()
+{
+    mapRaised();
+    ensureVisible();
+    XWarpPointer(display(), None, parent(), 0, 0, 0, 0,
+		 m_border->xIndent() / 2, m_border->xIndent() + 8);
+    activate();
+}
+
+
 void Client::eventButton(XButtonEvent *e)
 {
     if (e->type != ButtonPress) return;
-
-    if (e->button == Button3) {
-	lower();
-	return;
-    }
 
     mapRaised();
 
@@ -91,8 +133,11 @@ void WindowManager::menu(XButtonEvent *e)
     
     int i;
     ClientList clients;
+    Boolean allowExit = False;
 
-#define MENU_LABEL(n) ((n)==0? m_menuCreateLabel : clients.item((n)-1)->label())
+#define MENU_LABEL(n) ((n)==0 ? m_menuCreateLabel : \
+		       (allowExit && ((n) > clients.count())) ? "[Exit wm2]" \
+		       : clients.item((n)-1)->label())
 
     for (i = 0; i < m_hiddenClients.count(); ++i) {
 	clients.append(m_hiddenClients.item(i));
@@ -107,6 +152,12 @@ void WindowManager::menu(XButtonEvent *e)
     }
     int n = clients.count() + 1;
 
+    int mx = DisplayWidth (display(), m_screenNumber) - 1;
+    int my = DisplayHeight(display(), m_screenNumber) - 1;
+
+    allowExit = ((e->x > mx-3) && (e->y > my-3));
+    if (allowExit) n += 1;
+
     int width, maxWidth = 10;
     for (i = 0; i < n; ++i) {
 	width = XTextWidth(m_menuFont, MENU_LABEL(i), strlen(MENU_LABEL(i)));
@@ -119,8 +170,6 @@ void WindowManager::menu(XButtonEvent *e)
     int totalHeight = entryHeight * n + 13; 
     int x = e->x - maxWidth/2;
     int y = e->y - 2;
-    int mx = DisplayWidth (display(), m_screenNumber) - 1;
-    int my = DisplayHeight(display(), m_screenNumber) - 1;
     Boolean warp = False;
 
     if (x < 0) {
@@ -226,7 +275,7 @@ void WindowManager::menu(XButtonEvent *e)
 	    for (i = 0; i < n; ++i) {
 
 		int dx = XTextWidth(m_menuFont, MENU_LABEL(i),
-				     strlen(MENU_LABEL(i)));
+				    strlen(MENU_LABEL(i)));
 		int dy = i * entryHeight + m_menuFont->ascent + 10;
 		
 		if (i >= nh) {		    
@@ -247,6 +296,11 @@ void WindowManager::menu(XButtonEvent *e)
 
 	    drawn = True;
 	}
+    }
+
+    if (selecting == n-1 && allowExit) {
+	m_signalled = True;
+	return;
     }
 
     if (selecting >= 0) {
