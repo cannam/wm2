@@ -324,7 +324,9 @@ unsigned long WindowManager::allocateColour(char *name, char *desc)
 	sprintf(error, "couldn't load %s colour", desc);
 	fatal(error);
 
-    } else return nearest.pixel;
+    }
+
+    return nearest.pixel;
 }
 
 

@@ -4,7 +4,7 @@ INCS	= -I/usr/X11R6/include
 
 CC	= gcc
 CCC	= g++
-CFLAGS	= -O2 $(INCS)
+CFLAGS	= -O2 -Wall $(INCS)
 OBJECTS	= Border.o Buttons.o Client.o Events.o Main.o Manager.o Rotated.o
 
 .c.o:
