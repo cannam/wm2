@@ -3,9 +3,6 @@
 #include "Client.h"
 
 
-// hack:
-static unsigned long swallowNextEnterEvent = 0L;
-
 
 int WindowManager::loop()
 {
@@ -92,15 +89,15 @@ int WindowManager::loop()
 	case ConfigureNotify:
 	case MapNotify:
 	case MappingNotify:
-
-#ifdef DEBUG_EV
-	    trace("ignore", 0, &ev);
-#endif
 	    break;
 
 	default:
-	    if (ev.type == m_shapeEvent) eventShapeNotify((XShapeEvent *)&ev);
-	    else fprintf(stderr, "wm2: unsupported event type %d\n", ev.type);
+//	    if (ev.type == m_shapeEvent) eventShapeNotify((XShapeEvent *)&ev);
+	    if (ev.type == m_shapeEvent) {
+		fprintf(stderr, "wm2: shaped windows are not supported\n");
+	    } else {
+		fprintf(stderr, "wm2: unsupported event type %d\n", ev.type);
+	    }
 	    break;
 	}
     }
@@ -204,7 +201,7 @@ void Client::eventConfigureRequest(XConfigureRequestEvent *e)
 	sendConfigureNotify();
     }
 
-    if (m_initialising) {
+    if (m_managed) {
 	wc.x = m_border->xIndent();
 	wc.y = m_border->yIndent();
     } else {
@@ -263,11 +260,7 @@ void Client::eventMapRequest(XMapRequestEvent *)
 	mapRaised();
 	setState(NormalState);
 
-	if (CONFIG_CLICK_TO_FOCUS)/* ||
-	    (m_transient != None && activeClient() &&
-	     m_transient == activeClient()->m_window))*/ {
-	    activate();
-	}
+	if (CONFIG_CLICK_TO_FOCUS) activate();
 	break;
 
     case IconicState:
@@ -286,8 +279,6 @@ void WindowManager::eventUnmap(XUnmapEvent *e)
 
 void Client::eventUnmap(XUnmapEvent *e)
 {
-    swallowNextEnterEvent = 0L;
-
     switch (m_state) {
 
     case IconicState:
@@ -311,21 +302,6 @@ void WindowManager::eventCreate(XCreateWindowEvent *e)
 {
     if (e->override_redirect) return;
     Client *c = windowToClient(e->window, True);
-    if (c) c->eventCreate(e);
-}
-
-
-void Client::eventCreate(XCreateWindowEvent *)
-{
-    if (!CONFIG_CLICK_TO_FOCUS) {
-	Window r, ch;
-	int x = -1, y = -1, wx, wy;
-	unsigned int k;
-	XQueryPointer(display(), root(), &r, &ch, &x, &y, &wx, &wy, &k);
-	if (x > m_x && y > m_y && x < m_x + m_w && y < m_y + m_h) {
-	    activate();
-	}
-    }
 }
 
 
@@ -334,7 +310,6 @@ void WindowManager::eventDestroy(XDestroyWindowEvent *e)
     Client *c = windowToClient(e->window);
 
     if (c) {
-	swallowNextEnterEvent = 0L;
 
 	for (int i = m_clients.count()-1; i >= 0; --i) {
 	    if (m_clients.item(i) == c) {
@@ -454,10 +429,9 @@ void WindowManager::eventReparent(XReparentEvent *e)
 
 void WindowManager::eventEnter(XCrossingEvent *e)
 {
-//    if (e->detail == NotifyVirtual || e->detail == NotifyNonlinearVirtual) {
-//	return;
-//    }
+    if (e->type != EnterNotify) return;
 
+    while (XCheckMaskEvent(m_display, EnterWindowMask, (XEvent *)e));
     m_currentTime = e->time;	// not CurrentTime
 
     Client *c = windowToClient(e->window);
@@ -467,35 +441,37 @@ void WindowManager::eventEnter(XCrossingEvent *e)
 
 void Client::eventEnter(XCrossingEvent *e)
 {
-    long s = swallowNextEnterEvent;
+    // first, big checks so as not to allow focus to change "through"
+    // the hole in the tab
 
-    if (s == 0L && e->type == LeaveNotify) {
+    if (!isActive() && activeClient() && activeClient()->isNormal() &&
+	!activeClient()->isTransient()) {
 
-	if (!CONFIG_CLICK_TO_FOCUS &&
-	    e->window != m_window && e->window != parent() &&
-	    // must be tab or button
-	    ((e->x > 1 && e->x < m_border->xIndent() &&
-	      e->y > 1 && e->y < m_border->xIndent()) ||
-	     (e->x > m_border->xIndent() - m_border->yIndent() &&
-	      e->x < m_border->xIndent() + m_w &&
-	      e->y > 1 && e->y < m_border->yIndent()))) {
+	int x, y;
+	Window c;
 
-	    swallowNextEnterEvent = e->time; // so you can reach the button!
-	}
-	return;
+	XTranslateCoordinates
+	    (display(), activeClient()->parent(), e->window, 0, 0, &x, &y, &c);
 
-    } else if (s != 0L) {
-
-	swallowNextEnterEvent = 0L;
-
-	if (e->time <= s || e->time - s < 500L) {
-	    return;
-	}
+	if (activeClient()->coordsInHole(e->x - x, e->y - y)) return;
     }
 
     if (e->type == EnterNotify && !isActive() && !CONFIG_CLICK_TO_FOCUS) {
 	activate();
     }
+}
+
+
+Boolean Client::coordsInHole(int x, int y)	// relative to parent
+{
+    return m_border->coordsInHole(x, y);
+}
+
+
+Boolean Border::coordsInHole(int x, int y)	// this is all a bit of a hack
+{
+    return (x > 1 && x < m_tabWidth-1 &&
+	    y > 1 && y < m_tabWidth-1);
 }
 
 
@@ -532,6 +508,3 @@ void Client::eventExposure(XExposeEvent *e)
 }
 
 
-
-// don't handle these (yet?)
-void WindowManager::eventShapeNotify(XShapeEvent *) { }

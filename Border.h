@@ -13,9 +13,9 @@ public:
     Border(Client *const, Window child);
     ~Border();
 
-
     void map();
     void unmap();
+    void lower();
     void mapRaised();
     void decorate(Boolean active, int w, int h);
     void reparent();
@@ -45,6 +45,8 @@ public:
 	return isTransient() ? m_transientFrameWidth + 1 :
 	    m_tabWidth + m_frameWidth + 1;
     }
+
+    Boolean coordsInHole(int, int); // in Events.C of all places
     
 private:
     Client *m_client;

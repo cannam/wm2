@@ -25,6 +25,7 @@ public:
     void rename();
     void kill();
     void mapRaised();		// without activating
+    void lower();
 
     void move(XButtonEvent *);		// event for grab timestamp & coords
     void resize(XButtonEvent *, Boolean, Boolean);
@@ -39,15 +40,12 @@ public:
     Client *revertTo() { return m_revert; }
     void setRevertTo(Client *c) { m_revert = c; }
 
-    Boolean isHidden()    { return (m_state == IconicState);    }
-    Boolean isWithdrawn() { return (m_state == WithdrawnState); }
-    Boolean isNormal()    { return (m_state == NormalState);    }
-    Boolean isTransient() { return (m_transient != None);       }
+    Boolean isHidden()     { return (m_state == IconicState);    }
+    Boolean isWithdrawn()  { return (m_state == WithdrawnState); }
+    Boolean isNormal()     { return (m_state == NormalState);    }
+    Boolean isTransient()  { return (m_transient != None);       }
     Window  transientFor() { return m_transient; }
     Boolean isFixedSize()  { return m_fixedSize; }
-
-    Boolean isInitialising() { return m_initialising; }
-    Boolean isReparenting()  { return m_reparenting;  }
 
     const char *label()    { return m_label;    }
     const char *name()     { return m_name;     }
@@ -73,19 +71,16 @@ public:
     void eventMapRequest(XMapRequestEvent *);
     void eventConfigureRequest(XConfigureRequestEvent *);
     void eventUnmap(XUnmapEvent *);
-    void eventCreate(XCreateWindowEvent *);
     void eventColormap(XColormapEvent *);
     void eventProperty(XPropertyEvent *);
     void eventEnter(XCrossingEvent *);
     void eventFocusIn(XFocusInEvent *);
-//    void eventShapeNotify(XShapeEvent *);
     void eventExposure(XExposeEvent *);
 
-private:
-    // gcc says: class Client only defines a private destructor and
-    // has no friends.  I don't think that's very nice of gcc.  My
-    // code always has plenty of friends.
+protected:      // cravenly submitting to gcc's warnings
     ~Client();
+
+private:
 
     Window m_window;
     Window m_transient;
@@ -104,10 +99,11 @@ private:
     int m_minWidth;
     int m_minHeight;
     void fixResizeDimensions(int &, int &, int &, int &);
+    Boolean coordsInHole(int, int);
 
     int m_state;
     int m_protocol;
-    Boolean m_initialising;
+    Boolean m_managed;
     Boolean m_reparenting;
 
     char *m_name;

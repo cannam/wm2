@@ -559,6 +559,11 @@ void Border::setFrameVisibility(Boolean visible, int w, int h)
     XRectangle r;
     RectangleList rl;
 
+    if (CONFIG_PROD_SHAPE) {
+	shapeParent(w, h);
+	shapeTab(w, h);
+    }
+
     if (isTransient()) {
 	setTransientFrameVisibility(visible, w, h);
 	return;
@@ -676,11 +681,11 @@ void Border::configure(int x, int y, int w, int h,
 	if (!isTransient()) {
 	    XSelectInput(display(), m_tab,
 			 ExposureMask | ButtonPressMask | ButtonReleaseMask |
-			 EnterWindowMask | LeaveWindowMask);
+			 EnterWindowMask/* | LeaveWindowMask*/);
 	}
 
 	XSelectInput(display(), m_button,
-		     ButtonPressMask | ButtonReleaseMask | LeaveWindowMask);
+		     ButtonPressMask | ButtonReleaseMask/* | LeaveWindowMask*/);
 	XSelectInput(display(), m_resize, ButtonPressMask | ButtonReleaseMask);
 	mask |= CWX | CWY | CWWidth | CWHeight | CWBorderWidth;
     }
@@ -776,6 +781,12 @@ void Border::mapRaised()
 	    if (!isFixedSize()) XMapRaised(display(), m_resize);
 	}
     }
+}
+
+
+void Border::lower()
+{
+    XLowerWindow(display(), m_parent);
 }
 
 

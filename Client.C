@@ -14,7 +14,7 @@ Client::Client(WindowManager *const wm, Window w) :
     m_revert(0),
     m_fixedSize(False),
     m_state(WithdrawnState),
-    m_initialising(False),
+    m_managed(False),
     m_reparenting(False),
     m_colormap(None),
     m_colormapWinCount(0),
@@ -247,7 +247,7 @@ void Client::manage(Boolean mapped)
 	activeClient()->installColormap();
     }
 
-    m_initialising = True;
+    m_managed = True;
 }
 
 
@@ -266,6 +266,8 @@ void Client::activate()
 	fprintf(stderr, "wm2: warning: bad parent in Client::activate\n");
 	return;
     }
+
+    if (!m_managed || isHidden() || isWithdrawn()) return;
 
     if (isActive()) {
 	decorate(True);
@@ -547,7 +549,7 @@ void Client::getColormaps(void)
     Window *cw;
     XWindowAttributes attr;
 
-    if (!m_initialising) {
+    if (!m_managed) {
 	XGetWindowAttributes(display(), m_window, &attr);
 	m_colormap = attr.colormap;
 
@@ -710,5 +712,11 @@ void Client::ensureVisible()
     if (m_y < 0) m_y = 0;
 
     if (m_x != px || m_y != py) m_border->moveTo(m_x, m_y);
+}
+
+
+void Client::lower()
+{
+    m_border->lower();
 }
 

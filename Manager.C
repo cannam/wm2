@@ -27,10 +27,34 @@ implementPList(ClientList, Client);
 WindowManager::WindowManager() :
     m_menuGC(0), m_menuWindow(0), m_menuFont(0)
 {
-    fprintf(stderr, "wm2: Copyright (c) 1996 Chris Cannam\n"
+    fprintf(stderr, "\nwm2: Copyright (c) 1996 Chris Cannam\n"
 	    "     Parts derived from 9wm Copyright (c) 1994-96 David Hogan\n"
 	    "     %s\n     Copying and redistribution encouraged.  "
-	    "No warranty\n\n", XV_COPYRIGHT);
+	    "No warranty.\n", XV_COPYRIGHT);
+
+    if (CONFIG_CLICK_TO_FOCUS) {
+	if (CONFIG_RAISE_ON_FOCUS) {
+	    fprintf(stderr, "     Click to focus.  ");
+	} else {
+	    fatal("can't have click to focus without auto-raise");
+	}
+    } else {
+	if (CONFIG_RAISE_ON_FOCUS) {
+	    fprintf(stderr, "     Focus follows, auto-raise.  ");
+	} else {
+	    fprintf(stderr, "     Focus follows pointer.  ");
+	}
+    }
+
+    if (CONFIG_PROD_SHAPE) {
+	fprintf(stderr, "Shape prodding.  ");
+    }
+
+    if (CONFIG_EVERYTHING_ON_ROOT_MENU) {
+	fprintf(stderr, "All clients on menu.\n\n");
+    } else {
+	fprintf(stderr, "Hidden clients only on menu.\n\n");
+    }
 
     m_display = XOpenDisplay(NULL);
     if (!m_display) fatal("can't open display");
@@ -197,11 +221,12 @@ void WindowManager::initialiseScreen()
     m_defaultColormap = DefaultColormap(m_display, i);
     m_minimumColormaps = MinCmapsOfScreen(ScreenOfDisplay(m_display, i));
 
-    unsigned long blackPixel = BlackPixel(m_display, i);
-    unsigned long whitePixel = WhitePixel(m_display, i);
+    XColor black, white, temp;
 
-    XColor black = { blackPixel, 0, 0, 0, 7, ' ' };
-    XColor white = { whitePixel, 0xffff, 0xffff, 0xffff, 7, ' ' };
+    if (!XAllocNamedColor(m_display, m_defaultColormap, "black", &black, &temp))
+	fatal("couldn't load colour \"black\"!");
+    if (!XAllocNamedColor(m_display, m_defaultColormap, "white", &white, &temp))
+	fatal("couldn't load colour \"white\"!");
 
     m_cursor = makeCursor
 	(m_display, m_root, cursor_bits, cursor_mask_bits,
@@ -236,20 +261,20 @@ void WindowManager::initialiseScreen()
     XChangeWindowAttributes(m_display, m_root, CWCursor | CWEventMask, &attr);
     XSync(m_display, False);
 
-    XColor nearest, ideal;
+    XColor nearest;
 
     if (!XAllocNamedColor(m_display, m_defaultColormap,
-			  CONFIG_MENU_FOREGROUND, &nearest, &ideal)) {
+			  CONFIG_MENU_FOREGROUND, &nearest, &temp)) {
 	fatal("couldn't load menu foreground colour");
     } else m_menuForegroundPixel = nearest.pixel;
     
     if (!XAllocNamedColor(m_display, m_defaultColormap,
-			  CONFIG_MENU_BACKGROUND, &nearest, &ideal)) {
+			  CONFIG_MENU_BACKGROUND, &nearest, &temp)) {
 	fatal("couldn't load menu background colour");
     } else m_menuBackgroundPixel = nearest.pixel;
     
     if (!XAllocNamedColor(m_display, m_defaultColormap,
-			  CONFIG_MENU_BORDERS, &nearest, &ideal)) {
+			  CONFIG_MENU_BORDERS, &nearest, &temp)) {
 	fatal("couldn't load menu border colour");
     } else m_menuBorderPixel = nearest.pixel;
 
@@ -381,11 +406,6 @@ void WindowManager::installColormap(Colormap cmap)
     }
 }
 
-void WindowManager::clearColormapFocus()
-{
-    installColormap(None);
-}
-
 void WindowManager::clearFocus()
 {
     static Window w = 0;
@@ -405,7 +425,7 @@ void WindowManager::clearFocus()
 	    }
 	}
 
-	clearColormapFocus();
+	installColormap(None);
     }
 
     if (w == 0) {
@@ -509,7 +529,6 @@ void WindowManager::spawn()
 		char *pstring = (char *)malloc(strlen(displayName) + 10);
 		sprintf(pstring, "DISPLAY=%s", displayName);
 		putenv(pstring);
-		free(pstring);
 	    }
 
 	    if (CONFIG_EXEC_USING_SHELL) {

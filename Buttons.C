@@ -31,6 +31,11 @@ void Client::eventButton(XButtonEvent *e)
 {
     if (e->type != ButtonPress) return;
 
+    if (e->button == Button3) {
+	lower();
+	return;
+    }
+
     mapRaised();
 
     if (e->button == Button1) {

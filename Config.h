@@ -25,7 +25,14 @@
 #define CONFIG_MENU_BACKGROUND    "gray80"
 #define CONFIG_MENU_BORDERS       "black"
 
-#define CONFIG_EVERYTHING_ON_ROOT_MENU    True
+#define CONFIG_EVERYTHING_ON_ROOT_MENU True
+
+// If CONFIG_PROD_SHAPE is True, all frame element shapes will be
+// recalculated afresh every time their focus changes.  This will
+// probably slow things down hideously, but has been reported as
+// necessary on some systems (possibly SunOS 4.x with OpenWindows).
+
+#define CONFIG_PROD_SHAPE False
 
 #endif
 

@@ -21,14 +21,21 @@ wm2 provides:
   -- No virtual desktop, toolbars or integrated applications.
 
 
+This release
+============
+
+This is the second release of wm2.  It differs in some ways from the
+first release.
+
+
 Building wm2
 ============
 
 You will need a Unix machine, X libraries and a C++ compiler such as
-gcc.  You will also need a mouse, with a button.  Your X server and
-libraries must be R4 or newer and must support the Shape extension.
-wm2 does NOT support multi-screen displays, because I don't have
-anything to test multi-screen code on.
+gcc.  You will also need a mouse, with at least one button.  Your X
+server and libraries must be R4 or newer and must support the Shape
+extension.  wm2 does NOT support multi-screen displays, because I
+don't have anything to test multi-screen code on.
 
 wm2 makes relatively heavy demands on the performance of your X
 server, because of the use of shaped windows, but it shouldn't place
@@ -62,10 +69,12 @@ Available window manipulations are:
  -- To focus a window: depends on the focus policy you selected
     in Config.h before compiling.  The default distribution has
     focus-follows-pointer; if you prefer click-to-focus, edit
-    and rebuild.
+    and rebuild.  You can also choose focus-follows with auto-
+    raise, which should work a bit better in the second release
+    than it did in the first.
 
- -- To raise a window: click on its tab or frame.  (Depends on
-    your Config.h, though -- you can have raise-on-focus.)
+ -- To raise a window: click on its tab or frame, unless you have
+    auto-raise on focus set in Config.h.
 
  -- To move a window: make sure it's in focus, then click and drag
     on its tab.
@@ -90,8 +99,11 @@ Available window manipulations are:
     click and drag on the bottom-left or top-right corner of
     the enclosing window frame.
 
-All move and resize operations are opaque.  There is no way to
-lower a window (apart from by raising others over it).
+ -- To lower a window: click with the right mouse button on its
+    tab or frame.  (This is the only new feature in the second
+    release.)
+
+All move and resize operations are opaque.
 
 
 Credits

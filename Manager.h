@@ -14,20 +14,15 @@ public:
     WindowManager();
     ~WindowManager();
 
-    void clearFocus();
-    void clearColormapFocus();
-
     void fatal(const char *);
-
-    int timestamp(Boolean reset);
-    Boolean initialising() { return m_initialising; }
 
     // for call from Client and within:
 
     Client *windowToClient(Window, Boolean create = False);
-    Client *selectClient(Boolean needRelease, Boolean *shift);
     Client *activeClient() { return m_activeClient; }
     Boolean raiseTransients(Client *); // true if raised any
+    int timestamp(Boolean reset);
+    void clearFocus();
 
     void setActiveClient(Client *const c) { m_activeClient = c; }
 
@@ -117,7 +112,6 @@ private:
     void eventEnter(XCrossingEvent *);
     void eventReparent(XReparentEvent *);
     void eventFocusIn(XFocusInEvent *);
-    void eventShapeNotify(XShapeEvent *);
 };
 
 #endif
