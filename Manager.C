@@ -28,7 +28,7 @@ WindowManager::WindowManager() :
     m_menuGC(0), m_menuWindow(0), m_menuFont(0), m_focusChanging(False)
 {
     fprintf(stderr, "\nwm2: Copyright (c) 1996-7 Chris Cannam."
-	    "  Fourth release, March 1997\n"
+	    "  Not a release\n"
 	    "     Parts derived from 9wm Copyright (c) 1994-96 David Hogan\n"
 	    "     %s\n     Copying and redistribution encouraged.  "
 	    "No warranty.\n\n", XV_COPYRIGHT);

@@ -64,8 +64,8 @@ static char *my_strdup(char *str)
 static char *my_strtok(char *str1, char *str2)
 {
   char *ret;
-  int i, j, stop;
-  static int start, len;
+  size_t i, j, stop;
+  static size_t start, len;
   static char *stext;
 
   /* this error should never occur ... */
@@ -468,7 +468,8 @@ void XRotDrawAlignedString(Display *dpy, XRotFontStruct *rotfont,
 			   char *text, int align)
 {  
   int xp = 0, yp = 0, dir;
-  int i, nl = 1, max_width = 0, this_width;
+  size_t i;
+  int nl = 1, max_width = 0, this_width;
   char *str1, *str2 = "\n\0", *str3;
 
   if (text == NULL) 

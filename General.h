@@ -10,7 +10,9 @@
 #undef _POSIX_SOURCE
 #endif
 
+#ifndef __FreeBSD__
 #define _POSIX_SOURCE 1
+#endif
 
 #include <stdio.h>
 #include <signal.h>

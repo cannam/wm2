@@ -41,7 +41,7 @@ private: \
 
 #define implementList(List, T) \
 \
-List::List() : m_count(0), m_items(0) { } \
+List::List() : m_items(0), m_count(0) { } \
 \
 List::~List() { remove_all(); } \
 \

@@ -13,6 +13,9 @@ int WindowManager::loop()
 	nextEvent(&ev);
 	m_currentTime = CurrentTime;
 
+	if( !m_looping )
+		break;
+
 	switch (ev.type) {
 
 	case ButtonPress:
@@ -175,7 +178,7 @@ void WindowManager::checkDelaysForFocus()
 {
     if (!CONFIG_AUTO_RAISE) return;
 
-    int t = timestamp(True);
+    Time t = timestamp(True);
 
     if (m_focusPointerMoved) {	// only raise when pointer stops
 
@@ -439,7 +442,7 @@ void Client::eventUnmap(XUnmapEvent *e)
 void WindowManager::eventCreate(XCreateWindowEvent *e)
 {
     if (e->override_redirect) return;
-    Client *c = windowToClient(e->window, True);
+    windowToClient(e->window, True);
 }
 
 

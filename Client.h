@@ -125,8 +125,9 @@ private:
     WindowManager *const m_windowManager;
 
     char *getProperty(Atom);
-    int getAtomProperty(Atom, Atom);
-    int getIntegerProperty(Atom);
+    // Removing, as I do not know if it works correctly for 64-bit thingies
+    // int getAtomProperty(Atom, Atom);
+    //int getIntegerProperty(Atom);
 
     // accessors 
     Boolean getState(int *);

@@ -41,7 +41,7 @@ void BorderRectangleList::appendRect(int x, int y, int w, int h)
 Border::Border(Client *const c, Window child) :
     m_client(c), m_parent(0), m_tab(0),
     m_child(child), m_button(0), m_resize(0), m_label(0),
-    m_tabHeight(-1), m_prevW(-1), m_prevH(-1)
+    m_prevW(-1), m_prevH(-1), m_tabHeight(-1)
 {
     m_parent = root();
 
@@ -643,7 +643,7 @@ void Border::configure(int x, int y, int w, int h,
 	shapeParent(w, h);
 	setFrameVisibility(m_client->isActive(), w, h);
 
-	if (force ||
+	if (force || w != m_prevW ||
 	    prevTabHeight != m_tabHeight || m_prevW < 0 || m_prevH < 0) {
 
 	    wc.x = 0;
