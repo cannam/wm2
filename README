@@ -1,0 +1,132 @@
+
+wm2 -- a window manager
+=======================
+
+wm2 is a new window manager for X.  It provides an unusual style of
+window decoration and as little functionality as I feel comfortable
+with in a window manager.  wm2 is not configurable, except by editing
+the source and recompiling the code, and is really intended for people
+who don't particularly want their window manager to be too friendly.
+
+wm2 provides:
+
+  -- Decorative frames for your windows.
+
+  -- The ability to move, resize, hide and restore windows.
+
+  -- No icons.
+
+  -- No configurable root menus, buttons or mouse or keyboard bindings.
+
+  -- No virtual desktop, toolbars or integrated applications.
+
+
+Building wm2
+============
+
+You will need a Unix machine, X libraries and a C++ compiler such as
+gcc.  You will also need a mouse, with a button.  Your X server and
+libraries must be R4 or newer and must support the Shape extension.
+wm2 does NOT support multi-screen displays, because I don't have
+anything to test multi-screen code on.
+
+wm2 makes relatively heavy demands on the performance of your X
+server, because of the use of shaped windows, but it shouldn't place
+too much of a load on other aspects of your system.
+
+Inspect the file Config.h.  If any of the settings (fonts, colours and
+"xterm" application name) in this file are unlikely to work with your
+system, change them.  Ensure that CONFIG_NASTY_FONT is set to
+something which is unlikely not to be found.
+
+Edit the Makefile to suit the requirements of your system, and run
+"make depend" followed by "make".  This should build wm2.  On certain
+systems you may need to edit the source to overcome problems with the
+location of non-POSIX functions such as putenv() and select().
+
+
+Using wm2
+=========
+
+To run wm2, make sure you're not already running a window manager,
+make sure the DISPLAY variable is correctly set, and then execute the
+file "wm2".  There are no command-line options or X resources, and
+there is no start-up file.  If your X server doesn't support the Shape
+extension, wm2 will exit (and will never work on your server); if it
+can't find the required fonts or allocate the required colours, it
+will also exit (but you should be able to fix this by changing the
+definitions in Config.h and recompiling).
+
+Available window manipulations are:
+
+ -- To focus a window: depends on the focus policy you selected
+    in Config.h before compiling.  The default distribution has
+    focus-follows-pointer; if you prefer click-to-focus, edit
+    and rebuild.
+
+ -- To raise a window: click on its tab or frame.  (Depends on
+    your Config.h, though -- you can have raise-on-focus.)
+
+ -- To move a window: make sure it's in focus, then click and drag
+    on its tab.
+
+ -- To hide a window: make sure it's in focus, then click on the
+    button at the top of its tab.
+
+ -- To recover a hidden window: click left button on the root
+    window for the root menu, and choose the window you want.
+
+ -- To start a new xterm: use the first item on root menu ("New").
+
+ -- To delete a window: make sure it's in focus, click on the
+    button on the tab, hold the mouse button for at least a
+    second and a half until the cursor changes to a cross, then
+    release.  (I know, it's not very easy.  On the other hand,
+    things like Windows-95 tend to obscure the fact that most
+    windows already have a perfectly good Close option.)
+
+ -- To resize a window: make sure it's in focus, then click and
+    drag on its bottom-right corner.  For a constrained resize,
+    click and drag on the bottom-left or top-right corner of
+    the enclosing window frame.
+
+All move and resize operations are opaque.  There is no way to
+lower a window (apart from by raising others over it).
+
+
+Credits
+=======
+
+wm2 was written by Chris Cannam, recycling a lot of code and structure
+from "9wm" by David Hogan (see http://www.cs.su.oz.au/~dhog/ ).  9wm
+is written in C, so very little of the code is used verbatim, but the
+intention was to reuse and a lot of the resulting code is
+recognisable.  (Also 9wm's minimalism was rather inspiring.)  I've
+made enough changes to make it very probable that any bugs you find
+will be my fault rather than David's.
+
+wm2 also uses version 2.0 of Alan Richardson's "xvertext"
+font-rotation routines.
+
+The sideways tabs on the window frames were Andy Green's idea.
+
+
+Bugs &c
+=======
+
+If you find a bug, please report it to me (preferably with a fix).  If
+you want a new feature added, you can try asking but I'm unlikely to
+do it (unless it's something really original and very easy to do --
+which seems improbable).  If you've already written the code to add
+the feature, I'd probably quite like to see it but I'm unlikely to
+include it in the main distribution unless I really like it (or it's
+something "essential", like multi-headed display support).
+
+If you want to hack the code into something else for your own
+amusement, please go ahead.  Feel free to modify and redistribute, as
+long as you retain the original copyrights as appropriate.
+
+
+
+Chris Cannam, cannam@zands.demon.co.uk
+October 1996
