@@ -7,7 +7,9 @@
 #define CONFIG_NASTY_FONT	  "fixed"
 
 #define CONFIG_EXEC_USING_SHELL   False
+#ifndef CONFIG_NEW_WINDOW_COMMAND
 #define CONFIG_NEW_WINDOW_COMMAND "xterm"
+#endif
 #define CONFIG_EVERYTHING_ON_ROOT_MENU False
 
 // You can't have CLICK_TO_FOCUS without RAISE_ON_FOCUS but the other
