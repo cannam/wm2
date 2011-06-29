@@ -40,7 +40,7 @@ public:
     void installCursor(RootCursor);
     void installCursorOnWindow(RootCursor, Window);
     void installColormap(Colormap);
-    unsigned long allocateColour(char *, char *);
+    unsigned long allocateColour(const char *, const char *);
 
     void considerFocusChange(Client *, Window, Time timestamp);
     void stopConsideringFocus();

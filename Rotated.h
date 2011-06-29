@@ -58,7 +58,7 @@ struct XRotFontStruct {
 
 
 extern float XRotVersion(char *, int);
-extern XRotFontStruct *XRotLoadFont(Display *, char *, float);
+extern XRotFontStruct *XRotLoadFont(Display *, const char *, float);
 extern void XRotUnloadFont(Display *, XRotFontStruct *);
 extern int XRotTextWidth(XRotFontStruct *, char *, int);
 extern void XRotDrawString(Display *, XRotFontStruct *, Drawable, GC,

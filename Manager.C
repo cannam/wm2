@@ -312,7 +312,7 @@ void WindowManager::initialiseScreen()
 }
 
 
-unsigned long WindowManager::allocateColour(char *name, char *desc)
+unsigned long WindowManager::allocateColour(const char *name, const char *desc)
 {
     XColor nearest, ideal;
 

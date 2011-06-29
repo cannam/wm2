@@ -28,8 +28,8 @@
 
 int xv_errno;
 
-static char *my_strdup(char *);
-static char *my_strtok(char *, char *);
+static char *my_strdup(const char *);
+static char *my_strtok(char *, const char *);
 
 
 /* ---------------------------------------------------------------------- */  
@@ -37,7 +37,7 @@ static char *my_strtok(char *, char *);
 
 /* *** Routine to mimic `strdup()' (some machines don't have it) *** */
 
-static char *my_strdup(char *str)
+static char *my_strdup(const char *str)
 {
   char *s;
 
@@ -61,7 +61,7 @@ static char *my_strdup(char *str)
 /* *** Routine to replace `strtok' : this one returns a zero
        length string if it encounters two consecutive delimiters *** */
 
-static char *my_strtok(char *str1, char *str2)
+static char *my_strtok(char *str1, const char *str2)
 {
   char *ret;
   size_t i, j, stop;
@@ -121,7 +121,7 @@ float XRotVersion(char *str, int n)
 
 /* *** Load the rotated version of a given font *** */
  
-XRotFontStruct *XRotLoadFont(Display *dpy, char *fontname, float angle)
+XRotFontStruct *XRotLoadFont(Display *dpy, const char *fontname, float angle)
 {
   char val;
   XImage *I1, *I2;
@@ -470,7 +470,8 @@ void XRotDrawAlignedString(Display *dpy, XRotFontStruct *rotfont,
   int xp = 0, yp = 0, dir;
   size_t i;
   int nl = 1, max_width = 0, this_width;
-  char *str1, *str2 = "\n\0", *str3;
+  char *str1, *str3;
+  const char *str2 = "\n\0";
 
   if (text == NULL) 
     return;
