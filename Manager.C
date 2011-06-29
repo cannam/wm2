@@ -551,16 +551,16 @@ void WindowManager::spawn()
 	    }
 
 	    if (CONFIG_EXEC_USING_SHELL) {
-		execl(m_shell, m_shell, "-c", CONFIG_NEW_WINDOW_COMMAND, 0);
+		execl(m_shell, m_shell, "-c", CONFIG_NEW_WINDOW_COMMAND, (char *)0);
 		fprintf(stderr, "wm2: exec %s", m_shell);
 		perror(" failed");
 	    }
 
-	    execlp(CONFIG_NEW_WINDOW_COMMAND, CONFIG_NEW_WINDOW_COMMAND, 0);
+	    execlp(CONFIG_NEW_WINDOW_COMMAND, CONFIG_NEW_WINDOW_COMMAND, (char *)0);
 	    fprintf(stderr, "wm2: exec %s", CONFIG_NEW_WINDOW_COMMAND);
 	    perror(" failed");
 
-	    execlp("xterm", "xterm", "-ut", 0);
+	    execlp("xterm", "xterm", "-ut", (char *)0);
 	    perror("wm2: exec xterm failed");
 	    exit(1);
 	}
